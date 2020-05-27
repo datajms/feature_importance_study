@@ -1,0 +1,21 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    -   id: check-yaml
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+-   repo: local
+    hooks:
+    -   id: mypy
+        name: Check mypy static types match
+        entry: mypy feat_imp/ --ignore-missing-imports
+        pass_filenames: false
+        language: system
+        types: [python]
+    -   id: black_local
+        name: black the code
+        entry: black feat_imp/
+        pass_filenames: false
+        language: system
+        types: [python]
