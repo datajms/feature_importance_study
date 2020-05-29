@@ -6,6 +6,9 @@ matplotlib
 ## Generate dataset
 openturns
 
+## ML Model
+catboost
+
 ## Graph
 plotly
 
