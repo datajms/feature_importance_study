@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import openturns as ot
 
-from .conf_file_generation import GENERATION_CONF
+from .conf_file_generation import GENERATION_CONF, post_process_generated_dataset
 
 
 def sample_from_conf(
@@ -79,6 +79,10 @@ def sample_from_conf(
     ## Applys rounding
     for var in var_list:
         df_sample[var] = df_sample[var].round(var_conf[var]["round"])
+
+    ## Apply post-processinf
+
+    df_sample = post_process_generated_dataset(df_sample)
 
     return df_sample
 

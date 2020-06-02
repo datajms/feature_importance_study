@@ -1,4 +1,6 @@
 import openturns as ot
+import pandas as pd
+
 
 VAR_CONF_TRAIN = {  # In follinwg comments, conversion_rate is denoted by CR
     "day_of_week": {
@@ -9,13 +11,13 @@ VAR_CONF_TRAIN = {  # In follinwg comments, conversion_rate is denoted by CR
     },
     "price": {
         "marg": ot.LogNormal(5.0, 0.7, 8.0),  # mean is about 50
-        "corr": -0.6,  # Negative correlation with CR
+        "corr": -0.7,  # Negative correlation with CR
         "bounds": [1.0, 500.0],
         "round": 1,
     },
     "ratio_shipping": {
         "marg": ot.Normal(0.2, 0.07),  # mean is 0.3
-        "corr": -0.3,  # Negative correlation with CR
+        "corr": -0.05,  # Negative correlation with CR
         "bounds": [0.05, 0.4],
         "round": 4,
     },
@@ -33,19 +35,19 @@ VAR_CONF_TRAIN = {  # In follinwg comments, conversion_rate is denoted by CR
     },
     "avg_rating": {
         "marg": ot.Triangular(1.0, 4.0, 5.0),  # mode is 4.0
-        "corr": 0.3,  # The better rating, the better the CR
+        "corr": 0.25,  # The better rating, the better the CR
         "bounds": None,
         "round": 2,
     },
     "nb_provider_rating": {
         "marg": ot.Geometric(0.001),  # mean is 1000
-        "corr": 0.05,  # Weak positive correlation
+        "corr": 0.08,  # Weak positive correlation
         "bounds": None,
         "round": 0,  # Already an integer (casted as double)
     },
     "avg_provider_rating": {
         "marg": ot.Triangular(2.5, 4.0, 4.8),  # mode is 4.0
-        "corr": 0.1,  # Weak positive correlation
+        "corr": 0.01,  # Weak positive correlation
         "bounds": None,
         "round": 2,
     },
@@ -65,7 +67,7 @@ VAR_CONF_TRAIN = {  # In follinwg comments, conversion_rate is denoted by CR
 }
 
 CORR_CONF_TRAIN = {  # Conf file for adding correlations between variables
-    ("price", "ratio_shipping"): -0.4,  # The more expensive, the less costly
+    ("price", "ratio_shipping"): -0.15,  # The more expensive, the less costly
     # the shipping
 }
 
@@ -80,3 +82,37 @@ GENERATION_CONF = {
     "eval": {"var": VAR_CONF_EVAL, "corr": CORR_CONF_EVAL,},
     "test": {"var": VAR_CONF_TEST, "corr": CORR_CONF_TEST,},
 }
+
+
+def post_process_generated_dataset(df_sample: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add shipping_price variable and delete ratio_shipping variables
+    Equation is:
+    shipping_price = price * ratio_shipping / (1 - ratio_shipping)
+
+    Parameters
+    ----------
+    df_sample: pd.DataFrame
+        input dataframe
+
+    Returns
+    -------
+    df_output: pd.DataFrame
+        Transformed df
+    """
+    if df_sample["ratio_shipping"].max() >= 1:
+        raise ValueError("Ratio_shipping must be strictly smaller than 1.")
+
+    df_output = df_sample.copy()
+
+    df_output["ratio_shipping"] = (
+        df_output["price"]
+        * df_output["ratio_shipping"]
+        / (1 - df_output["ratio_shipping"])
+    )
+
+    df_output = df_output.rename(
+        lambda x: "shipping_price" if x == "ratio_shipping" else x, axis="columns"
+    )
+
+    return df_output
